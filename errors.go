@@ -1,13 +1,16 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.ru>. All rights reserved.
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.ru>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
 package casecheck
 
-import "strings"
+import (
+	"strings"
+	"testing"
+)
 
-func NoError(t IUnitTest, err error, args ...interface{}) {
+func NoError(t testing.TB, err error, args ...interface{}) {
 	if err == nil {
 		return
 	}
@@ -16,7 +19,7 @@ func NoError(t IUnitTest, err error, args ...interface{}) {
 	t.FailNow()
 }
 
-func Error(t IUnitTest, err error, args ...interface{}) {
+func Error(t testing.TB, err error, args ...interface{}) {
 	if err != nil {
 		return
 	}
@@ -25,13 +28,8 @@ func Error(t IUnitTest, err error, args ...interface{}) {
 	t.FailNow()
 }
 
-func ErrorContains(t IUnitTest, err error, need string, args ...interface{}) {
-	if err == nil {
-		t.Helper()
-		t.Errorf(errorMessage(args, "Want error, but got <nil>"))
-		t.FailNow()
-		return
-	}
+func ErrorContains(t testing.TB, err error, need string, args ...interface{}) {
+	Error(t, err, args...)
 
 	if strings.Contains(err.Error(), need) {
 		return

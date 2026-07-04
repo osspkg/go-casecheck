@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.ru>. All rights reserved.
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.ru>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -10,9 +10,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"testing"
 )
 
-func Equal(t IUnitTest, expected interface{}, actual interface{}, args ...interface{}) {
+func Equal(t testing.TB, expected interface{}, actual interface{}, args ...interface{}) {
 	et, at := reflect.ValueOf(expected).Kind(), reflect.ValueOf(actual).Kind()
 	if et != at {
 		t.Helper()
@@ -29,7 +30,7 @@ func Equal(t IUnitTest, expected interface{}, actual interface{}, args ...interf
 	t.FailNow()
 }
 
-func NotEqual(t IUnitTest, expected interface{}, actual interface{}, args ...interface{}) {
+func NotEqual(t testing.TB, expected interface{}, actual interface{}, args ...interface{}) {
 	et, at := reflect.ValueOf(expected).Kind(), reflect.ValueOf(actual).Kind()
 	if et != at {
 		t.Helper()
@@ -46,7 +47,7 @@ func NotEqual(t IUnitTest, expected interface{}, actual interface{}, args ...int
 	t.FailNow()
 }
 
-func True(t IUnitTest, actual bool, args ...interface{}) {
+func True(t testing.TB, actual bool, args ...interface{}) {
 	if actual {
 		return
 	}
@@ -55,7 +56,7 @@ func True(t IUnitTest, actual bool, args ...interface{}) {
 	t.FailNow()
 }
 
-func False(t IUnitTest, actual bool, args ...interface{}) {
+func False(t testing.TB, actual bool, args ...interface{}) {
 	if !actual {
 		return
 	}
@@ -64,7 +65,7 @@ func False(t IUnitTest, actual bool, args ...interface{}) {
 	t.FailNow()
 }
 
-func Contains(t IUnitTest, searchData interface{}, need interface{}, args ...interface{}) {
+func Contains(t testing.TB, searchData interface{}, need interface{}, args ...interface{}) {
 	dt, st := reflect.ValueOf(searchData), reflect.ValueOf(need)
 	var (
 		found bool
@@ -99,7 +100,7 @@ func Contains(t IUnitTest, searchData interface{}, need interface{}, args ...int
 	t.FailNow()
 }
 
-func NotContains(t IUnitTest, searchData interface{}, need interface{}, args ...interface{}) {
+func NotContains(t testing.TB, searchData interface{}, need interface{}, args ...interface{}) {
 	dt, st := reflect.ValueOf(searchData), reflect.ValueOf(need)
 	var (
 		found bool
