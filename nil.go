@@ -15,7 +15,7 @@ func Nil(t testing.TB, actual interface{}, args ...interface{}) {
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Want <nil>, but got %+v", actual))
+	t.Error(errorMessage(args, "Want <nil>, but got %+v", actual))
 	t.FailNow()
 }
 
@@ -24,7 +24,7 @@ func NotNil(t testing.TB, actual interface{}, args ...interface{}) {
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Want not <nil>, but got %+v", actual))
+	t.Error(errorMessage(args, "Want not <nil>, but got %+v", actual))
 	t.FailNow()
 }
 
@@ -32,5 +32,11 @@ func isNil(value interface{}) bool {
 	if value == nil {
 		return true
 	}
-	return reflect.ValueOf(value).IsNil()
+
+	switch reflect.ValueOf(value).Kind() {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.Interface, reflect.Slice:
+		return reflect.ValueOf(value).IsNil()
+	default:
+		return false
+	}
 }

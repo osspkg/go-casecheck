@@ -7,87 +7,75 @@ package casecheck
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 )
 
+// Equal fails the test unless expected and actual have the same type and value.
 func Equal(t testing.TB, expected interface{}, actual interface{}, args ...interface{}) {
-	et, at := reflect.ValueOf(expected).Kind(), reflect.ValueOf(actual).Kind()
-	if et != at {
+	if reflect.TypeOf(expected) != reflect.TypeOf(actual) {
 		t.Helper()
-		t.Errorf(errorMessage(args, "Different type\nExpected: %T\nActual: %T", expected, actual))
+		t.Error(errorMessage(args, "Different type\nExpected: %T\nActual: %T", expected, actual))
 		t.FailNow()
 		return
 	}
-	ev, av := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", actual)
-	if ev == av {
+	if valuesEqual(expected, actual) {
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Value is not identical\nExpected: %+v\nActual: %+v", expected, actual))
+	t.Error(errorMessage(args, "Value is not identical\nExpected: %+v\nActual: %+v", expected, actual))
 	t.FailNow()
 }
 
+// NotEqual fails the test when expected and actual have the same type and value.
 func NotEqual(t testing.TB, expected interface{}, actual interface{}, args ...interface{}) {
-	et, at := reflect.ValueOf(expected).Kind(), reflect.ValueOf(actual).Kind()
-	if et != at {
+	if reflect.TypeOf(expected) != reflect.TypeOf(actual) {
 		t.Helper()
-		t.Errorf(errorMessage(args, "Different type\nExpected: %T\nActual: %T", expected, actual))
+		t.Error(errorMessage(args, "Different type\nExpected: %T\nActual: %T", expected, actual))
 		t.FailNow()
 		return
 	}
-	ev, av := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", actual)
-	if ev != av {
+	if !valuesEqual(expected, actual) {
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Value is not identical\nExpected: %+v\nActual: %+v", expected, actual))
+	t.Error(errorMessage(args, "Value is not identical\nExpected: %+v\nActual: %+v", expected, actual))
 	t.FailNow()
 }
 
+func valuesEqual(expected interface{}, actual interface{}) bool {
+	return reflect.DeepEqual(expected, actual)
+}
+
+// True fails the test when actual is false.
 func True(t testing.TB, actual bool, args ...interface{}) {
 	if actual {
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Want <true>, but got: %+v", actual))
+	t.Error(errorMessage(args, "Want <true>, but got: %+v", actual))
 	t.FailNow()
 }
 
+// False fails the test when actual is true.
 func False(t testing.TB, actual bool, args ...interface{}) {
 	if !actual {
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Want <false>, but got: %+v", actual))
+	t.Error(errorMessage(args, "Want <false>, but got: %+v", actual))
 	t.FailNow()
 }
 
+// Contains fails the test unless searchData contains need. Strings and byte
+// slices use substring matching; maps are searched by key; slices and arrays
+// are searched by element.
 func Contains(t testing.TB, searchData interface{}, need interface{}, args ...interface{}) {
-	dt, st := reflect.ValueOf(searchData), reflect.ValueOf(need)
-	var (
-		found bool
-	)
-
-	if s1, s2, ok0 := asString(searchData, need); ok0 {
-		found = strings.Contains(s1, s2)
-	} else if b1, b2, ok1 := asBytes(searchData, need); ok1 {
-		found = bytes.Contains(b1, b2)
-	} else if dt.Kind() == reflect.Map {
-		for _, value := range dt.MapKeys() {
-			if value.Kind() != st.Kind() {
-				continue
-			}
-			if reflect.DeepEqual(value.Interface(), st.Interface()) {
-				found = true
-				break
-			}
-		}
-	} else {
+	found, supported := contains(searchData, need)
+	if !supported {
 		t.Helper()
-		t.Errorf(errorMessage(args, "Unsupported types\nSearchData: %T\nNeed: %T", searchData, need))
+		t.Error(errorMessage(args, "Unsupported types\nSearchData: %T\nNeed: %T", searchData, need))
 		t.FailNow()
 		return
 	}
@@ -96,33 +84,18 @@ func Contains(t testing.TB, searchData interface{}, need interface{}, args ...in
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Not found\nSearchData: %+v\nNeed: %+v", searchData, need))
+	t.Error(errorMessage(args, "Not found\nSearchData: %+v\nNeed: %+v", searchData, need))
 	t.FailNow()
 }
 
+// NotContains fails the test when searchData contains need. Strings and byte
+// slices use substring matching; maps are searched by key; slices and arrays
+// are searched by element.
 func NotContains(t testing.TB, searchData interface{}, need interface{}, args ...interface{}) {
-	dt, st := reflect.ValueOf(searchData), reflect.ValueOf(need)
-	var (
-		found bool
-	)
-
-	if s1, s2, ok0 := asString(searchData, need); ok0 {
-		found = strings.Contains(s1, s2)
-	} else if b1, b2, ok1 := asBytes(searchData, need); ok1 {
-		found = bytes.Contains(b1, b2)
-	} else if dt.Kind() == reflect.Map {
-		for _, value := range dt.MapKeys() {
-			if value.Kind() != st.Kind() {
-				continue
-			}
-			if reflect.DeepEqual(value.Interface(), st.Interface()) {
-				found = true
-				break
-			}
-		}
-	} else {
+	found, supported := contains(searchData, need)
+	if !supported {
 		t.Helper()
-		t.Errorf(errorMessage(args, "Unsupported types\nSearchData: %T\nNeed: %T", searchData, need))
+		t.Error(errorMessage(args, "Unsupported types\nSearchData: %T\nNeed: %T", searchData, need))
 		t.FailNow()
 		return
 	}
@@ -131,8 +104,37 @@ func NotContains(t testing.TB, searchData interface{}, need interface{}, args ..
 		return
 	}
 	t.Helper()
-	t.Errorf(errorMessage(args, "Found\nSearchData: %+v\nNeed: %+v", searchData, need))
+	t.Error(errorMessage(args, "Found\nSearchData: %+v\nNeed: %+v", searchData, need))
 	t.FailNow()
+}
+
+func contains(searchData interface{}, need interface{}) (bool, bool) {
+	if s1, s2, ok := asString(searchData, need); ok {
+		return strings.Contains(s1, s2), true
+	}
+	if b1, b2, ok := asBytes(searchData, need); ok {
+		return bytes.Contains(b1, b2), true
+	}
+
+	data := reflect.ValueOf(searchData)
+	switch data.Kind() {
+	case reflect.Map:
+		for _, key := range data.MapKeys() {
+			if reflect.DeepEqual(key.Interface(), need) {
+				return true, true
+			}
+		}
+		return false, true
+	case reflect.Array, reflect.Slice:
+		for index := 0; index < data.Len(); index++ {
+			if reflect.DeepEqual(data.Index(index).Interface(), need) {
+				return true, true
+			}
+		}
+		return false, true
+	default:
+		return false, false
+	}
 }
 
 func asString(v0 interface{}, v1 interface{}) (string, string, bool) {
