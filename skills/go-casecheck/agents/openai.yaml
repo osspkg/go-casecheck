@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go Casecheck"
+  short_description: "Write API-accurate Go test assertions"
+  default_prompt: "Use $go-casecheck to write or review tests with go.osspkg.com/casecheck."

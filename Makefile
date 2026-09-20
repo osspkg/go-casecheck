@@ -1,4 +1,3 @@
-
 SHELL=/bin/bash
 
 
@@ -28,4 +27,3 @@ pre-commit: install license lint tests build
 
 .PHONY: ci
 ci: pre-commit
-
